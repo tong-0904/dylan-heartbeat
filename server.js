@@ -594,7 +594,9 @@ app.post("/v1/chat/completions", async (req, reply) => {
       .filter(Boolean);
 
     const oldEvents = stripPosition(
-      oldTimeline.filter(isSpecialEvent).sort((a, b) => {
+       oldTimeline.filter(isSpecialEvent)
+        .filter(event => !normalizeContentToText(event.content).includes("自动唤醒"))
+        .sort((a, b) => { 
         const timeA = extractTimestampWithMemory(a, tsDB);
         const timeB = extractTimestampWithMemory(b, tsDB);
         if (timeA && timeB) return timeA - timeB;
