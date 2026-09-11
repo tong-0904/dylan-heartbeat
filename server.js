@@ -575,8 +575,11 @@ app.post("/v1/chat/completions", async (req, reply) => {
     for (const msg of kelivoMessages) {
       if (msg.role === "system") continue;
       if (msg.role === "tool") continue;
-      const ts = extractTimestamp(normalizeContentToText(msg.content));
-      if (!ts) continue;
+    let ts = extractTimestamp(normalizeContentToText(msg.content));
+if (!ts && msg.role === "user") {
+  ts = new Date();
+}
+if (!ts) continue;
       const fp = makeFingerprint(msg);
       const fpStripped = makeFingerprintStripped(msg);
       if (!tsDB[fp]) { tsDB[fp] = ts.toISOString(); tsDBDirty = true; }
