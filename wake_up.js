@@ -340,17 +340,59 @@ function parseTimelineTimestamp(value) {
   return zonedWallTimeToDate({ year: yyyy, month, day, hour, minute }, TIME_ZONE);
 }
 
+
 function getLastUserTime(messages) {
-  const reversed = [...messages].reverse();
-  for (const msg of reversed) {
-    if (msg.role === "user") {
-      const content = normalizeContentToText(msg.content);
-      // 批注 2026-07-15：兼容 Kelivo 时间前缀 "YYYY-MM-DDHH:mm"；
-      // 旧的 "YYYY-MM-DD HH:mm" 仍然可用，避免无空格时间导致 wake-up 误判没有用户时间。
-      const parsed = parseTimelineTimestamp(content);
-      if (parsed) return parsed;
+  const timestampPath = runtimeFile("message_timestamps.json");
+
+  let tsDB = {};
+
+  if (fs.existsSync(timestampPath)) {
+    try {
+      tsDB = JSON.parse(fs.readFileSync(timestampPath, "utf-8"));
+    } catch (err) {
+      console.log("读取 message_timestamps.json 失败");
     }
   }
+
+
+  const reversed = [...messages].reverse();
+
+  for (const msg of reversed) {
+
+    if (msg.role !== "user") continue;
+
+
+    const content = normalizeContentToText(msg.content);
+
+
+    // 先尝试直接读取消息时间
+    const parsed = parseTimelineTimestamp(content);
+
+    if (parsed) {
+      return parsed;
+    }
+
+
+    // 如果没有时间，从数据库寻找
+    const key = `user::${content}`;
+
+    if (tsDB[key]) {
+      return new Date(tsDB[key]);
+    }
+
+
+    // 兼容去除时间后的指纹
+    for (const k of Object.keys(tsDB)) {
+      if (
+        k.startsWith("user::") &&
+        k.includes(content.slice(0,50))
+      ) {
+        return new Date(tsDB[k]);
+      }
+    }
+  }
+
+
   return null;
 }
 
