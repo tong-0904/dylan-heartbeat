@@ -575,7 +575,7 @@ app.post("/v1/chat/completions", async (req, reply) => {
     for (const msg of kelivoMessages) {
       if (msg.role === "system") continue;
       if (msg.role === "tool") continue;
-    let ts = extractTimestamp(normalizeContentToText(msg.content));
+    let ts = extractTimestamp(normalizeContentToText(msg.content)); 
 if (!ts && msg.role === "user") {
   ts = new Date();
 }
